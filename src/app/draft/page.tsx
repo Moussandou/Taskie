@@ -6,6 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+function formatDuration(minutes: number) {
+  if (minutes < 60) return `${minutes}min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h${m.toString().padStart(2, '0')}` : `${h}h`;
+}
+
 export default function DraftPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [workStart, setWorkStart] = useState('09:00');
@@ -27,7 +34,7 @@ export default function DraftPage() {
   const handleUpdateTask = (
     index: number,
     field: keyof Task,
-    value: string | number
+    value: string | number | null
   ) => {
     const newTasks = [...tasks];
     newTasks[index] = { ...newTasks[index], [field]: value };
@@ -49,6 +56,7 @@ export default function DraftPage() {
       importance: 3,
       energie: 'medium',
       deadline: null,
+      date: null,
       flexibilite: 'flexible',
     };
     const newTasks = [...tasks, newTask];
@@ -147,7 +155,7 @@ export default function DraftPage() {
                     </button>
 
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                      <div className="md:col-span-7">
+                      <div className="md:col-span-5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           Titre de la tâche
                         </label>
@@ -161,9 +169,12 @@ export default function DraftPage() {
                         />
                       </div>
 
-                      <div className="md:col-span-2">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Durée (min)
+                      <div className="md:col-span-2 relative group">
+                        <label className="text-[10px] font-bold text-slate-400 tracking-wider flex items-center justify-between">
+                          <span className="uppercase">Durée</span>
+                          <span className="text-primary">
+                            {formatDuration(task.duree_estimee)}
+                          </span>
                         </label>
                         <input
                           type="number"
@@ -180,6 +191,20 @@ export default function DraftPage() {
                       </div>
 
                       <div className="md:col-span-3">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Date (Option)
+                        </label>
+                        <input
+                          type="date"
+                          value={task.date || ''}
+                          onChange={(e) =>
+                            handleUpdateTask(i, 'date', e.target.value || null)
+                          }
+                          className="w-full bg-transparent font-medium text-slate-800 border-b border-transparent hover:border-slate-200 focus:border-primary focus:outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                           Énergie
                         </label>

@@ -18,6 +18,13 @@ export const TaskSchema = z.object({
     .string()
     .nullable()
     .describe('Heure limite au format HH:mm, ou null si non spécifié'),
+  date: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "Date spécifique requise au format YYYY-MM-DD, ou null/undefined si la tâche peut être faite n'importe quel jour."
+    ),
   contexte: z
     .enum(['phone', 'pc', 'home', 'outside', 'any'])
     .describe('Contexte requis pour effectuer la tâche'),

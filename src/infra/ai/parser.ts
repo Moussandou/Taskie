@@ -33,6 +33,7 @@ Texte : "${text}"`,
                 },
                 importance: { type: Type.INTEGER, description: '1 à 5' },
                 deadline: { type: Type.STRING, nullable: true },
+                date: { type: Type.STRING, nullable: true },
                 contexte: {
                   type: Type.STRING,
                   enum: ['phone', 'pc', 'home', 'outside', 'any'],
