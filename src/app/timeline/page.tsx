@@ -50,7 +50,7 @@ function DroppableDayColumn({
   return (
     <div
       ref={setNodeRef}
-      className="flex-1 relative border-r border-slate-100 last:border-r-0 min-w-[200px] z-10"
+      className="flex-1 relative border-r border-slate-100 last:border-r-0 min-w-[140px] shrink-0 z-10"
     >
       {children}
     </div>
