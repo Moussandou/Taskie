@@ -85,7 +85,10 @@ export default function DraftPage() {
       const data = await res.json();
       console.log('Success:', data);
 
-      // On peut vider le storage vu que c'est sauvegardé en BDD
+      localStorage.setItem(
+        'taskie_scheduled_tasks',
+        JSON.stringify(data.scheduledTasks)
+      );
       localStorage.removeItem('taskie_tasks');
       router.push('/timeline');
     } catch (error) {
@@ -197,13 +200,9 @@ export default function DraftPage() {
 
                       <div className="md:col-span-2 relative group flex flex-col justify-end">
                         <label className="text-[10px] font-bold text-slate-400 tracking-wider flex items-center justify-between mb-1">
-                          <span className="uppercase">Durée (min)</span>
-                          <span className="text-primary text-[14px] font-extrabold bg-primary/10 px-2.5 py-1 rounded-md">
-                            {formatDuration(task.duree_estimee)}
-                          </span>
+                          <span className="uppercase">Durée</span>
                         </label>
-                        <input
-                          type="number"
+                        <select
                           value={task.duree_estimee}
                           onChange={(e) =>
                             handleUpdateTask(
@@ -212,8 +211,17 @@ export default function DraftPage() {
                               parseInt(e.target.value) || 0
                             )
                           }
-                          className="w-full bg-transparent font-medium text-slate-800 border-b border-transparent hover:border-slate-200 focus:border-primary focus:outline-none transition-colors"
-                        />
+                          className="w-full bg-primary/10 text-primary text-[14px] font-extrabold px-2.5 py-1 rounded-md appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-center"
+                        >
+                          {[
+                            15, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360,
+                            480,
+                          ].map((d) => (
+                            <option key={d} value={d}>
+                              {formatDuration(d)}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
                       <div className="md:col-span-3">

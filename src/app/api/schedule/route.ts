@@ -4,7 +4,6 @@ import {
   SchedulingSettings,
 } from '@/usecases/schedulingEngine';
 import { Task } from '@/domain/task.schema';
-import { adminDb } from '@/infra/firebase/admin';
 
 export async function POST(req: Request) {
   try {
@@ -36,33 +35,19 @@ export async function POST(req: Request) {
     // Pour l'instant, on génère un mock UID si l'app n'a pas encore de système de login complet.
     const userId = 'anonymous_user';
 
-    const batch = adminDb.batch();
-
-    for (const task of scheduledTasks) {
-      // Créer une reférence de document. Si id existe on l'utilise, sinon un nouveau.
-      const docRef = task.id
-        ? adminDb.collection('tasks').doc(task.id)
-        : adminDb.collection('tasks').doc();
-
-      // Assurez-vous que la tâche a bien un ID pour le client ensuite
-      const finalTask = {
-        ...task,
-        id: docRef.id,
-        userId,
-        status: 'todo',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-
-      batch.set(docRef, finalTask, { merge: true });
-    }
-
-    await batch.commit();
+    const finalTasks = scheduledTasks.map((task) => ({
+      ...task,
+      id: task.id || crypto.randomUUID(),
+      userId,
+      status: 'todo',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
 
     return NextResponse.json({
-      message: 'Planning généré et sauvegardé avec succès',
-      count: scheduledTasks.length,
-      // scheduledTasks, // Optionnel: on peut retourner la liste pour que le state client se mette à jour directement
+      message: 'Planning généré avec succès',
+      count: finalTasks.length,
+      scheduledTasks: finalTasks,
     });
   } catch (error: unknown) {
     console.error('API Schedule Error:', error);
