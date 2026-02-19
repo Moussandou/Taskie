@@ -23,7 +23,6 @@ export default function DraftPage() {
     const saved = localStorage.getItem('taskie_tasks');
     if (saved) {
       try {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setTasks(JSON.parse(saved));
       } catch {
         console.error('Failed to parse tasks');
@@ -64,10 +63,37 @@ export default function DraftPage() {
     localStorage.setItem('taskie_tasks', JSON.stringify(newTasks));
   };
 
-  const handleGenerate = () => {
-    // Save constraints/settings here if necessary
-    // Proceed to schedule
-    router.push('/timeline');
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const res = await fetch('/api/schedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tasks,
+          workStart,
+          workEnd,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Erreur lors de la génération');
+      }
+
+      const data = await res.json();
+      console.log('Success:', data);
+
+      // On peut vider le storage vu que c'est sauvegardé en BDD
+      localStorage.removeItem('taskie_tasks');
+      router.push('/timeline');
+    } catch (error) {
+      console.error(error);
+      alert('Une erreur est survenue lors de la planification.');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
@@ -259,9 +285,12 @@ export default function DraftPage() {
               <div className="pt-4 border-t border-slate-100">
                 <button
                   onClick={handleGenerate}
-                  className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover hover:-translate-y-0.5 transition-all"
+                  disabled={isGenerating}
+                  className="w-full rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Générer mon planning
+                  {isGenerating
+                    ? 'Génération en cours...'
+                    : 'Générer mon planning'}
                 </button>
                 <p className="mt-3 text-center text-xs text-slate-400">
                   L&apos;IA placera intelligemment les {tasks.length} tâches
