@@ -23,6 +23,7 @@ export interface SchedulingSettings {
 export interface ScheduledTask extends Task {
   scheduledStart: string; // ISO String
   scheduledEnd: string; // ISO String
+  autoScheduled?: boolean;
 }
 
 export class SchedulingEngine {
@@ -168,12 +169,27 @@ export class SchedulingEngine {
       let targetDays = availableDays;
 
       if (task.date) {
-        // Si la tâche a une date fixée, on restreint la recherche à ce jour uniquement
-        if (availableDays.includes(task.date)) {
-          targetDays = [task.date];
+        // Normaliser la date (si elle contient une heure ISO ou un autre format)
+        let formattedDate = task.date;
+        if (formattedDate.includes('T')) {
+          formattedDate = formattedDate.split('T')[0];
+        } else if (formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          // Déjà au bon format
         } else {
-          // Date demandée est hors du scope généré (dans le passé ou trop loin).
-          // On la replacera au premier jour dispo en fallback
+          // Essayer de parser si c'est un format bizarre
+          try {
+            const d = new Date(formattedDate);
+            if (!isNaN(d.getTime())) {
+              formattedDate = d.toISOString().split('T')[0];
+            }
+          } catch (e) {}
+        }
+
+        // Si on trouve ce jour précis
+        if (availableDays.includes(formattedDate)) {
+          targetDays = [formattedDate];
+        } else {
+          // Fallback sur tous les jours disponibles
           targetDays = availableDays;
         }
       }
@@ -198,6 +214,7 @@ export class SchedulingEngine {
               ...task,
               scheduledStart: taskStart.toISOString(),
               scheduledEnd: taskEnd.toISOString(),
+              autoScheduled: !task.date,
             });
 
             // Amputer/Réduire le bloc
@@ -209,11 +226,37 @@ export class SchedulingEngine {
         }
       }
 
+      if (!placed && targetDays.length === 1 && task.date) {
+        // Échec de placement sur le jour précis. On force le fallback sur la semaine entière
+        for (const day of availableDays) {
+          if (placed) break;
+          const blocks = freeBlocksByDay[day];
+          for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (block.durationMinutes >= task.duree_estimee) {
+              const taskStart = new Date(block.start);
+              const taskEnd = new Date(
+                block.start.getTime() + task.duree_estimee * 60000
+              );
+              scheduledTasks.push({
+                ...task,
+                scheduledStart: taskStart.toISOString(),
+                scheduledEnd: taskEnd.toISOString(),
+                autoScheduled: true, // Marqué comme autosuggestion car déplacé
+              });
+              block.start = taskEnd;
+              block.durationMinutes -= task.duree_estimee;
+              placed = true;
+              break;
+            }
+          }
+        }
+      }
+
       if (!placed) {
-        // Tâche impossible à placer dans le scope actuel et avec les durées données
-        // On la garde avec start/end nulles par exemple, ou on jette l'erreur.
-        // Ici on la rejette par simplification, ou alors on l'empile à la fin du dernier jour "hors horaire".
-        console.warn(`Impossible de placer la tâche : ${task.titre}`);
+        console.warn(
+          `Impossible de placer la tâche : ${task.titre}. Elle dépasse probablement la taille max d'un bloc libre !`
+        );
       }
     }
 

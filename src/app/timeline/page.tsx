@@ -7,9 +7,9 @@ import {
   format,
   parseISO,
   addDays,
-  startOfDay,
   isSameDay,
   addMinutes,
+  startOfWeek,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -27,6 +27,7 @@ interface ScheduledTask extends Task {
   scheduledStart: string;
   scheduledEnd: string;
   status?: string;
+  autoScheduled?: boolean;
 }
 
 const MIN_HOUR = 8; // 08:00
@@ -35,7 +36,6 @@ const HOUR_HEIGHT = 80; // pixels per hour
 
 // --- DND Components ---
 
-// Wrapper pour chaque Journée (Colonne de drop)
 function DroppableDayColumn({
   day,
   children,
@@ -57,19 +57,20 @@ function DroppableDayColumn({
   );
 }
 
-// Wrapper pour chaque Tâche (Elément draggable)
 function DraggableTaskCard({
   task,
   style,
   isDone,
   onSnooze,
   onDone,
+  onAcceptAuto,
 }: {
   task: ScheduledTask;
-  style: { top: string | number; height: string | number; className: string };
+  style: { top: number; height: number; className: string };
   isDone: boolean;
   onSnooze: (id: string) => void;
   onDone: (id: string) => void;
+  onAcceptAuto: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: task.id || `task-${task.titre}`,
@@ -77,85 +78,123 @@ function DraggableTaskCard({
     disabled: isDone, // On ne drag pas les tâches terminées
   });
 
-  // Appliquer le transform (glissement visuel)
   const transformStyle = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        zIndex: 50,
+        zIndex: 999,
         opacity: 0.9,
         boxShadow:
           '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
       }
     : undefined;
 
+  const isShort = style.height < 45;
+
   return (
     <div
       ref={setNodeRef}
-      className={`absolute left-1.5 right-1.5 rounded-xl border p-3 flex flex-col shadow-sm transition-shadow hover:shadow-md cursor-grab active:cursor-grabbing backdrop-blur-sm bg-opacity-95 overflow-hidden group ${style.className} ${isDone ? 'opacity-40 grayscale cursor-default' : ''}`}
-      style={{ top: style.top, height: style.height, ...transformStyle }}
+      className={`absolute left-1.5 right-1.5 rounded-xl cursor-grab active:cursor-grabbing group z-10 hover:z-50 ${transformStyle ? '' : 'transition-all'}`}
+      style={{
+        top: `${style.top}px`,
+        height: `${style.height}px`,
+        minHeight: isShort ? '34px' : undefined,
+        ...transformStyle,
+      }}
       {...listeners}
       {...attributes}
     >
-      <div className="flex justify-between items-start mb-1 pointer-events-none">
-        <div
-          className={`text-[10px] font-bold uppercase tracking-widest opacity-60 ${isDone ? 'line-through' : ''}`}
-        >
-          {format(parseISO(task.scheduledStart), 'HH:mm')} -{' '}
-          {format(parseISO(task.scheduledEnd), 'HH:mm')}
-        </div>
-
-        {/* Actions - Pointer events auto so they can be clicked */}
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto">
-          <button
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSnooze(task.id!);
-            }}
-            className="px-1.5 py-0.5 rounded-md hover:bg-black/5 text-slate-600 text-[10px] font-bold transition-colors"
-            title="Snooze"
+      <div
+        className={`absolute top-0 left-0 right-0 min-h-full h-full hover:h-auto border p-2 flex flex-col shadow-sm transition-shadow hover:shadow-xl rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-95 ${task.autoScheduled ? 'ring-2 ring-primary ring-offset-1 ring-offset-white animate-pulse-slow' : ''} ${style.className} ${isDone ? 'opacity-40 grayscale cursor-default' : ''}`}
+      >
+        <div className="flex justify-between items-start mb-1 pointer-events-none gap-2">
+          <div
+            className={`text-[10px] whitespace-nowrap font-bold uppercase tracking-widest opacity-60 ${isDone ? 'line-through' : ''}`}
           >
-            Zz
-          </button>
-          {!isDone && (
+            {format(parseISO(task.scheduledStart), 'HH:mm')} -{' '}
+            {format(parseISO(task.scheduledEnd), 'HH:mm')}
+          </div>
+
+          {/* Actions (Snooze & Done) */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto shrink-0 bg-white/50 backdrop-blur-md rounded-md p-0.5">
+            <button
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSnooze(task.id!);
+              }}
+              className="px-1.5 py-0.5 rounded-md hover:bg-black/10 text-slate-700 text-[10px] font-bold transition-colors"
+              title="Snooze à demain"
+            >
+              Zz
+            </button>
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
                 e.stopPropagation();
                 onDone(task.id!);
               }}
-              className="px-1.5 py-0.5 rounded-md hover:bg-emerald-500/20 text-emerald-600 font-bold transition-colors"
-              title="Marquer fait"
+              className="px-1.5 py-0.5 rounded-md hover:bg-emerald-500/20 text-emerald-700 font-bold transition-colors"
+              title={isDone ? 'Annuler le statut Fait' : 'Marquer comme fait'}
             >
-              ✓
+              {isDone ? '↺' : '✓'}
             </button>
-          )}
+          </div>
         </div>
-      </div>
 
-      <h3
-        className={`font-bold text-sm leading-tight mt-0.5 pointer-events-none ${isDone ? 'line-through opacity-70' : ''}`}
-      >
-        {task.titre}
-      </h3>
+        <h3
+          className={`font-bold text-xs sm:text-sm leading-tight mt-0.5 pointer-events-none line-clamp-2 group-hover:line-clamp-none ${isDone ? 'line-through opacity-70' : ''}`}
+        >
+          {task.titre}
+        </h3>
 
-      {task.duree_estimee >= 45 && (
-        <div className="mt-auto flex items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-2 pointer-events-none">
-          {task.contexte !== 'any' && (
+        {!isShort && task.duree_estimee >= 30 && (
+          <div className="mt-auto flex items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-2 pointer-events-none group-hover:flex">
+            {task.contexte !== 'any' && (
+              <span className="px-1.5 py-0.5 bg-black/5 rounded">
+                📍 {task.contexte}
+              </span>
+            )}
             <span className="px-1.5 py-0.5 bg-black/5 rounded">
-              📍 {task.contexte}
+              ⚡ {task.energie}
             </span>
-          )}
-          <span className="px-1.5 py-0.5 bg-black/5 rounded">
-            ⚡ {task.energie}
-          </span>
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Drag handle visual hint */}
-      {!isDone && (
-        <div className="absolute left-1/2 -top-1 -translate-x-1/2 w-8 h-1.5 bg-black/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-      )}
+        {isShort && (
+          <div className="hidden group-hover:flex mt-auto items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-2 pointer-events-none">
+            {task.contexte !== 'any' && (
+              <span className="px-1.5 py-0.5 bg-black/5 rounded">
+                📍 {task.contexte}
+              </span>
+            )}
+            <span className="px-1.5 py-0.5 bg-black/5 rounded">
+              ⚡ {task.energie}
+            </span>
+          </div>
+        )}
+
+        {/* HUD pour auto-suggestion */}
+        {task.autoScheduled && !isDone && (
+          <div className="hidden group-hover:flex mt-2 text-[10px] font-bold text-primary items-center gap-2 bg-primary/10 p-1.5 rounded-md pointer-events-auto transition-opacity">
+            <span>✨ Suggestion</span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAcceptAuto(task.id!);
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="ml-auto bg-primary text-white px-2 py-0.5 rounded shadow-sm hover:bg-primary/80 transition-colors"
+            >
+              OK
+            </button>
+          </div>
+        )}
+
+        {/* Drag handle */}
+        {!isDone && (
+          <div className="absolute left-1/2 -top-1 -translate-x-1/2 w-8 h-1.5 bg-black/10 rounded-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+        )}
+      </div>
     </div>
   );
 }
@@ -166,11 +205,10 @@ export default function TimelinePage() {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [days, setDays] = useState<Date[]>([]);
 
-  // Utiliser le PointerSensor pour ignorer les clics boutons
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Requires minimum 5px movement before drag starts (allows clicks on buttons)
+        distance: 5,
       },
     })
   );
@@ -183,30 +221,33 @@ export default function TimelinePage() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setTasks(parsedTasks);
 
+        let baseDate = new Date();
         if (parsedTasks.length > 0) {
           const sortedStarts = parsedTasks
             .map((t) => parseISO(t.scheduledStart))
             .sort((a, b) => a.getTime() - b.getTime());
-          const firstDay = startOfDay(sortedStarts[0]);
-          const lastDay = startOfDay(sortedStarts[sortedStarts.length - 1]);
-
-          let currentDay = firstDay;
-          const uniqueDays: Date[] = [];
-
-          while (currentDay <= lastDay && uniqueDays.length < 7) {
-            uniqueDays.push(currentDay);
-            currentDay = addDays(currentDay, 1);
+          if (sortedStarts[0] < baseDate) {
+            baseDate = sortedStarts[0];
           }
-
-          setDays(
-            uniqueDays.length > 0 ? uniqueDays : [startOfDay(new Date())]
-          );
-        } else {
-          setDays([startOfDay(new Date())]);
         }
+
+        // Toujours afficher une semaine du Lundi au Dimanche
+        const firstDay = startOfWeek(baseDate, { weekStartsOn: 1 });
+        const uniqueDays = Array.from({ length: 7 }).map((_, i) =>
+          addDays(firstDay, i)
+        );
+
+        setDays(uniqueDays);
       } catch {
         console.error('Failed to parse scheduled tasks');
       }
+    } else {
+      const firstDay = startOfWeek(new Date(), { weekStartsOn: 1 });
+      const uniqueDays = Array.from({ length: 7 }).map((_, i) =>
+        addDays(firstDay, i)
+      );
+
+      setDays(uniqueDays);
     }
   }, []);
 
@@ -244,35 +285,25 @@ export default function TimelinePage() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over, delta } = event;
 
-    if (!over) return; // Dropped outside
+    if (!over) return;
 
     const task = active.data.current?.task as ScheduledTask;
     if (!task) return;
 
-    // Calculate new start time based on pixel delta Y
-    // delta.y is the pixel difference.
-    // HOUR_HEIGHT px = 60 minutes
-    // deltaMinutes = dropDeltaY * (60 / HOUR_HEIGHT)
     const minutesDelta = Math.round(delta.y * (60 / HOUR_HEIGHT));
-
-    // Snap to 15 minute grids ideally, but let's just use raw minute delta and round to nearest 15
     const remainder = minutesDelta % 15;
     const snappedMinutesDelta =
       minutesDelta -
       remainder +
       (Math.abs(remainder) >= 7.5 ? Math.sign(minutesDelta) * 15 : 0);
 
-    // Identify target day (if dragged across columns)
     const targetDayISO = over.id as string;
     const targetDayDate = parseISO(targetDayISO);
     const originalStartDate = parseISO(task.scheduledStart);
 
-    // Create new Date
     let newStart = addMinutes(originalStartDate, snappedMinutesDelta);
 
-    // If we changed columns, we need to apply the time relative to the new day
     if (!isSameDay(originalStartDate, targetDayDate)) {
-      // Keep the hour/minute from newStart but apply target day
       newStart = new Date(
         targetDayDate.getFullYear(),
         targetDayDate.getMonth(),
@@ -282,8 +313,6 @@ export default function TimelinePage() {
       );
     }
 
-    // Ensure boundaries (e.g., don't drag earlier than 00:00 or later than 23:59, or within MIN/MAX HOUR if desired)
-    // For now purely update the start/end
     const newEnd = addMinutes(newStart, task.duree_estimee);
 
     const updatedTasks = tasks.map((t) => {
@@ -306,14 +335,37 @@ export default function TimelinePage() {
 
   const handleSnooze = (taskId: string | undefined) => {
     if (!taskId) return;
-    alert(`Snooze de la tâche ${taskId}`);
-    // Plus tard : appeler /api/reschedule
+    const updated = tasks.map((t) => {
+      if (t.id === taskId) {
+        const start = addDays(parseISO(t.scheduledStart), 1);
+        const end = addDays(parseISO(t.scheduledEnd), 1);
+        return {
+          ...t,
+          scheduledStart: start.toISOString(),
+          scheduledEnd: end.toISOString(),
+        };
+      }
+      return t;
+    });
+    setTasks(updated);
+    localStorage.setItem('taskie_scheduled_tasks', JSON.stringify(updated));
   };
 
   const handleDone = (taskId: string | undefined) => {
     if (!taskId) return;
     const updated = tasks.map((t) =>
-      t.id === taskId ? { ...t, status: 'done' } : t
+      t.id === taskId
+        ? { ...t, status: t.status === 'done' ? 'todo' : 'done' }
+        : t
+    );
+    setTasks(updated);
+    localStorage.setItem('taskie_scheduled_tasks', JSON.stringify(updated));
+  };
+
+  const handleAcceptAuto = (taskId: string | undefined) => {
+    if (!taskId) return;
+    const updated = tasks.map((t) =>
+      t.id === taskId ? { ...t, autoScheduled: false } : t
     );
     setTasks(updated);
     localStorage.setItem('taskie_scheduled_tasks', JSON.stringify(updated));
@@ -326,7 +378,7 @@ export default function TimelinePage() {
       </div>
 
       <main className="relative z-10 mx-auto w-full max-w-7xl px-4 flex-grow flex flex-col gap-6">
-        <header className="flex items-center justify-between">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900">
               Mon Emploi du Temps
@@ -344,101 +396,130 @@ export default function TimelinePage() {
           </Link>
         </header>
 
-        {/* DND Context wraps the calendar grid */}
         <DndContext
           sensors={sensors}
           onDragEnd={handleDragEnd}
           modifiers={[restrictToWindowEdges]}
         >
           <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-            {/* Header Row (Days) */}
-            <div className="flex border-b border-slate-100 bg-slate-50/50">
-              <div className="w-16 flex-shrink-0 border-r border-slate-100"></div>
+            <div className="overflow-x-auto custom-scrollbar flex flex-col">
+              <div className="min-w-[1044px] flex flex-col">
+                {/* Header Row (Days) - Scrollable on mobile */}
+                <div className="flex border-b border-slate-100 bg-slate-50/50 pt-2">
+                  <div className="w-16 flex-shrink-0 border-r border-slate-100 sticky left-0 bg-slate-50/50 z-40"></div>
 
-              {days.map((day, i) => (
-                <div
-                  key={i}
-                  className="flex-1 py-4 text-center border-r border-slate-100 flex flex-col"
-                >
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    {format(day, 'EEEE', { locale: fr })}
-                  </span>
-                  <span
-                    className={`text-2xl font-black mt-1 ${isSameDay(day, new Date()) ? 'text-primary' : 'text-slate-800'}`}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                  {isSameDay(day, new Date()) && (
-                    <div className="mx-auto mt-1 h-1 w-1 rounded-full bg-primary"></div>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Grid Body */}
-            <div
-              className="flex relative overflow-y-auto"
-              style={{ height: '70vh' }}
-            >
-              {/* Time Labels Column */}
-              <div className="w-16 flex-shrink-0 border-r border-slate-100 bg-white relative z-20">
-                {Array.from({ length: MAX_HOUR - MIN_HOUR + 1 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="text-right pr-3 text-xs font-medium text-slate-400 -translate-y-2 relative"
-                    style={{ height: `${HOUR_HEIGHT}px` }}
-                  >
-                    {`${MIN_HOUR + i}:00`}
-                  </div>
-                ))}
-              </div>
-
-              {/* Days Content Columns */}
-              <div className="flex flex-1 relative bg-white overflow-hidden">
-                {/* Background horizontal lines for all hours */}
-                <div className="absolute inset-0 pointer-events-none flex flex-col z-0">
-                  {Array.from({ length: MAX_HOUR - MIN_HOUR }).map((_, i) => (
+                  {days.map((day, i) => (
                     <div
                       key={i}
-                      className="border-b border-slate-50 w-full"
-                      style={{ height: `${HOUR_HEIGHT}px` }}
-                    ></div>
+                      className="flex-1 min-w-[140px] py-4 text-center border-r border-slate-100 flex flex-col shrink-0"
+                    >
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                        {format(day, 'EEEE', { locale: fr })}
+                      </span>
+                      <span
+                        className={`text-2xl font-black mt-1 ${isSameDay(day, new Date()) ? 'text-primary' : 'text-slate-800'}`}
+                      >
+                        {format(day, 'd')}
+                      </span>
+                      {isSameDay(day, new Date()) && (
+                        <div className="mx-auto mt-1 h-1 w-1 rounded-full bg-primary"></div>
+                      )}
+                    </div>
                   ))}
                 </div>
 
-                {/* Columns for each day */}
-                {days.map((day, dayIndex) => {
-                  const dayTasks = tasks.filter(
-                    (t) =>
-                      t.scheduledStart &&
-                      isSameDay(parseISO(t.scheduledStart), day)
-                  );
+                {/* Grid Body */}
+                <div
+                  className="flex relative overflow-y-auto custom-scrollbar-y"
+                  style={{ height: '70vh' }}
+                >
+                  {/* Time Labels Column */}
+                  <div className="w-16 flex-shrink-0 border-r border-slate-100 bg-white relative z-30 sticky left-0">
+                    {Array.from({ length: MAX_HOUR - MIN_HOUR + 1 }).map(
+                      (_, i) => (
+                        <div
+                          key={i}
+                          className="text-right pr-3 text-xs font-medium text-slate-400 -translate-y-2 relative"
+                          style={{ height: `${HOUR_HEIGHT}px` }}
+                        >
+                          {`${MIN_HOUR + i}:00`}
+                        </div>
+                      )
+                    )}
+                  </div>
 
-                  return (
-                    <DroppableDayColumn key={dayIndex} day={day}>
-                      {dayTasks.map((task) => {
-                        const style = getTaskStyle(task);
-                        const isDone = task.status === 'done';
+                  {/* Days Content Columns */}
+                  <div className="flex flex-1 relative bg-white">
+                    {/* Background horizontal lines for all hours */}
+                    <div className="absolute inset-0 pointer-events-none flex flex-col z-0 min-w-full">
+                      {Array.from({ length: MAX_HOUR - MIN_HOUR }).map(
+                        (_, i) => (
+                          <div
+                            key={i}
+                            className="border-b border-slate-50 w-full"
+                            style={{ height: `${HOUR_HEIGHT}px` }}
+                          ></div>
+                        )
+                      )}
+                    </div>
 
-                        return (
-                          <DraggableTaskCard
-                            key={task.id}
-                            task={task}
-                            style={style}
-                            isDone={isDone}
-                            onSnooze={handleSnooze}
-                            onDone={handleDone}
-                          />
-                        );
-                      })}
-                    </DroppableDayColumn>
-                  );
-                })}
+                    {/* Columns for each day */}
+                    {days.map((day, dayIndex) => {
+                      const dayTasks = tasks.filter(
+                        (t) =>
+                          t.scheduledStart &&
+                          isSameDay(parseISO(t.scheduledStart), day)
+                      );
+
+                      return (
+                        <DroppableDayColumn key={dayIndex} day={day}>
+                          {dayTasks.map((task) => {
+                            const style = getTaskStyle(task);
+                            const isDone = task.status === 'done';
+
+                            return (
+                              <DraggableTaskCard
+                                key={task.id}
+                                task={task}
+                                style={style}
+                                isDone={isDone}
+                                onSnooze={handleSnooze}
+                                onDone={handleDone}
+                                onAcceptAuto={handleAcceptAuto}
+                              />
+                            );
+                          })}
+                        </DroppableDayColumn>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </DndContext>
       </main>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1;
+          border-radius: 20px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }
