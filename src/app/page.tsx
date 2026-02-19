@@ -43,7 +43,14 @@ export default function Home() {
       <div className="absolute inset-0 bg-dot-pattern opacity-[0.4] pointer-events-none" />
 
       {/* Abstract Background Waves (SVG-like curves) */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+      <motion.div
+        animate={{
+          y: [0, -15, 0],
+          rotate: [0, 1.5, 0, -1.5, 0],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0"
+      >
         <svg
           viewBox="0 0 1000 1000"
           xmlns="http://www.w3.org/2000/svg"
@@ -64,7 +71,7 @@ export default function Home() {
             strokeLinecap="round"
           />
         </svg>
-      </div>
+      </motion.div>
 
       {/* Navigation */}
       <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
@@ -78,22 +85,7 @@ export default function Home() {
           </span>
         </div>
 
-        <nav className="hidden md:flex gap-8 text-sm font-medium text-slate-600">
-          <a href="#" className="hover:text-foreground transition-colors">
-            Solutions
-          </a>
-          <a href="#" className="hover:text-foreground transition-colors">
-            Tarifs
-          </a>
-          <a href="#" className="hover:text-foreground transition-colors">
-            Blog
-          </a>
-        </nav>
-
-        <div className="flex items-center gap-4">
-          <button className="hidden sm:flex items-center gap-2 text-sm font-medium text-slate-600 border px-3 py-1.5 rounded-full hover:bg-slate-50 transition-colors">
-            🇫🇷 Français
-          </button>
+        <div className="flex items-center gap-4 ml-auto">
           <button className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover transition-colors">
             Mon Espace
           </button>
@@ -197,8 +189,12 @@ export default function Home() {
         {/* Floating card 1 - Top Left */}
         <motion.div
           initial={{ opacity: 0, x: -20, rotate: -5 }}
-          animate={{ opacity: 1, x: 0, rotate: -5 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+          animate={{ opacity: 1, x: 0, rotate: -5, y: [0, -10, 0] }}
+          transition={{
+            duration: 0.8,
+            delay: 0.6,
+            y: { duration: 4, repeat: Infinity, ease: 'easeInOut' },
+          }}
           className="absolute top-40 left-12 glass-pane rounded-2xl p-4 shadow-lg flex items-center gap-4 bg-white/80"
         >
           <div className="rounded-xl bg-purple-100 p-2 text-primary">
@@ -218,8 +214,12 @@ export default function Home() {
         {/* Floating card 2 - Bottom Left */}
         <motion.div
           initial={{ opacity: 0, x: -20, rotate: 3 }}
-          animate={{ opacity: 1, x: 0, rotate: 3 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
+          animate={{ opacity: 1, x: 0, rotate: 3, y: [0, 8, 0] }}
+          transition={{
+            duration: 0.8,
+            delay: 0.8,
+            y: { duration: 5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 },
+          }}
           className="absolute bottom-40 left-20 glass-pane rounded-2xl p-4 shadow-lg flex items-center gap-4 bg-white/80"
         >
           <div className="rounded-xl bg-amber-100 p-2 text-amber-600">
@@ -242,8 +242,12 @@ export default function Home() {
         {/* Floating card 3 - Top Right */}
         <motion.div
           initial={{ opacity: 0, x: 20, rotate: 4 }}
-          animate={{ opacity: 1, x: 0, rotate: 4 }}
-          transition={{ duration: 0.8, delay: 0.7 }}
+          animate={{ opacity: 1, x: 0, rotate: 4, y: [0, -12, 0] }}
+          transition={{
+            duration: 0.8,
+            delay: 0.7,
+            y: { duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 },
+          }}
           className="absolute top-52 right-12 glass-pane rounded-2xl p-4 shadow-lg flex items-center gap-4 bg-white/80"
         >
           <div className="rounded-xl bg-green-100 p-2 text-green-600">
@@ -264,8 +268,17 @@ export default function Home() {
         {/* Floating card 4 - Bottom Right */}
         <motion.div
           initial={{ opacity: 0, x: 20, rotate: -3 }}
-          animate={{ opacity: 1, x: 0, rotate: -3 }}
-          transition={{ duration: 0.8, delay: 0.9 }}
+          animate={{ opacity: 1, x: 0, rotate: -3, y: [0, 10, 0] }}
+          transition={{
+            duration: 0.8,
+            delay: 0.9,
+            y: {
+              duration: 5.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+              delay: 1.5,
+            },
+          }}
           className="absolute bottom-32 right-32 glass-pane rounded-2xl p-4 shadow-lg flex items-center gap-4 bg-white/80"
         >
           <div className="rounded-xl bg-blue-100 p-2 text-blue-600">
