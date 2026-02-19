@@ -104,7 +104,11 @@ function DraggableTaskCard({
       {...attributes}
     >
       <div
-        className={`absolute top-0 left-0 right-0 min-h-full h-full hover:h-auto border p-2 flex flex-col shadow-sm transition-shadow hover:shadow-xl rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-95 ${task.autoScheduled ? 'ring-2 ring-primary ring-offset-1 ring-offset-white animate-pulse-slow' : ''} ${style.className} ${isDone ? 'opacity-40 grayscale cursor-default' : ''}`}
+        className={`absolute top-0 left-0 right-0 h-full border p-2 flex flex-col shadow-sm transition-all rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-95 
+        ${task.autoScheduled ? 'ring-2 ring-primary ring-offset-1 ring-offset-white' : ''} 
+        ${style.className} 
+        ${isDone ? 'opacity-40 grayscale cursor-default' : ''}
+        ${isShort ? 'hover:h-auto hover:min-h-fit hover:z-50 hover:shadow-xl' : ''}`}
       >
         <div className="flex justify-between items-start mb-1 pointer-events-none gap-2">
           <div
@@ -115,7 +119,9 @@ function DraggableTaskCard({
           </div>
 
           {/* Actions (Snooze & Done) */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto shrink-0 bg-white/50 backdrop-blur-md rounded-md p-0.5">
+          <div
+            className={`flex items-center gap-1 opacity-0 ${isShort ? 'group-hover:opacity-100' : 'group-hover:opacity-100'} transition-opacity pointer-events-auto shrink-0 bg-white/50 backdrop-blur-md rounded-md p-0.5`}
+          >
             <button
               onPointerDown={(e) => e.stopPropagation()}
               onClick={(e) => {
@@ -142,7 +148,7 @@ function DraggableTaskCard({
         </div>
 
         <h3
-          className={`font-bold text-xs sm:text-sm leading-tight mt-0.5 pointer-events-none line-clamp-2 group-hover:line-clamp-none ${isDone ? 'line-through opacity-70' : ''}`}
+          className={`font-bold text-xs sm:text-sm leading-tight mt-0.5 pointer-events-none line-clamp-2 ${isShort ? 'group-hover:line-clamp-none' : ''} ${isDone ? 'line-through opacity-70' : ''}`}
         >
           {task.titre}
         </h3>
@@ -175,7 +181,9 @@ function DraggableTaskCard({
 
         {/* HUD pour auto-suggestion */}
         {task.autoScheduled && !isDone && (
-          <div className="hidden group-hover:flex mt-2 text-[10px] font-bold text-primary items-center gap-2 bg-primary/10 p-1.5 rounded-md pointer-events-auto transition-opacity">
+          <div
+            className={`${isShort ? 'hidden group-hover:flex' : 'flex'} mt-2 text-[10px] font-bold text-primary items-center gap-2 bg-primary/10 p-1.5 rounded-md pointer-events-auto transition-opacity`}
+          >
             <span>✨ Suggestion</span>
             <button
               onClick={(e) => {
