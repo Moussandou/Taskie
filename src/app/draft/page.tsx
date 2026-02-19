@@ -89,7 +89,8 @@ export default function DraftPage() {
         'taskie_scheduled_tasks',
         JSON.stringify(data.scheduledTasks)
       );
-      localStorage.removeItem('taskie_tasks');
+      // Ne pas supprimer le draft pour que l'utilisateur puisse y revenir
+      // localStorage.removeItem('taskie_tasks');
       router.push('/timeline');
     } catch (error) {
       console.error(error);

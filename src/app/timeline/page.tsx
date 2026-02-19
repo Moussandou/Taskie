@@ -438,7 +438,7 @@ export default function TimelinePage() {
 
                 {/* Grid Body */}
                 <div
-                  className="flex relative overflow-y-auto custom-scrollbar-y"
+                  className="flex relative overflow-y-auto overflow-x-hidden custom-scrollbar-y"
                   style={{ height: '70vh' }}
                 >
                   {/* Time Labels Column */}
