@@ -1,13 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const [dump, setDump] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,26 +81,38 @@ export default function Home() {
       </motion.div>
 
       {/* Navigation */}
-      <header className="relative z-20 mx-auto flex max-w-7xl items-center justify-between px-6 py-6 lg:px-8">
-        <div className="flex items-center gap-2">
-          {/* Logo placeholder */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white font-bold text-lg">
-            T
+      <div
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'p-4' : 'p-0'
+        }`}
+      >
+        <header
+          className={`mx-auto flex max-w-7xl items-center justify-between transition-all duration-300 ${
+            isScrolled
+              ? 'glass-pane rounded-full px-6 py-3 shadow-lg bg-white/70'
+              : 'px-6 py-6 lg:px-8'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {/* Logo placeholder */}
+            <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-white font-bold text-lg">
+              T
+            </div>
+            <span className="text-xl font-bold tracking-tight text-foreground">
+              Taskie
+            </span>
           </div>
-          <span className="text-xl font-bold tracking-tight text-foreground">
-            Taskie
-          </span>
-        </div>
 
-        <div className="flex items-center gap-4 ml-auto">
-          <button className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover transition-colors">
-            Mon Espace
-          </button>
-        </div>
-      </header>
+          <div className="flex items-center gap-4 ml-auto">
+            <button className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-hover transition-colors">
+              Mon Espace
+            </button>
+          </div>
+        </header>
+      </div>
 
       {/* Hero Section */}
-      <main className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 pt-20 pb-24 text-center">
+      <main className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 pt-32 pb-24 text-center">
         <motion.p
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -296,7 +315,7 @@ export default function Home() {
       </div>
 
       {/* Trusted By Section (Optional) */}
-      <div className="relative z-10 mx-auto max-w-5xl mt-8 mb-20 px-6 opacity-60 grayscale">
+      <div className="relative z-10 mx-auto max-w-5xl mt-8 mb-24 px-6 opacity-60 grayscale">
         <p className="text-center text-sm font-medium text-slate-400 mb-8">
           Pensé, conçu et supporté par
         </p>
@@ -309,6 +328,34 @@ export default function Home() {
           <span className="text-xl font-bold italic">Framer</span>
           <span className="text-xl font-bold">Firebase</span>
         </div>
+      </div>
+
+      {/* Floating Footer */}
+      <div className="relative z-20 pb-8 px-4 sm:px-6 lg:px-8">
+        <footer className="mx-auto max-w-5xl glass-pane rounded-[2rem] p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 text-sm text-slate-500 shadow-sm bg-white/70">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-sm">
+              T
+            </div>
+            <span className="font-semibold text-slate-700">Taskie AI</span>
+          </div>
+
+          <p className="text-center md:text-left">
+            © {new Date().getFullYear()} Taskie AI. Tous droits réservés.
+          </p>
+
+          <div className="flex gap-6 font-medium">
+            <a href="#" className="hover:text-primary transition-colors">
+              Général
+            </a>
+            <a href="#" className="hover:text-primary transition-colors">
+              Confidentialité
+            </a>
+            <a href="#" className="hover:text-primary transition-colors">
+              Mentions Légales
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );
