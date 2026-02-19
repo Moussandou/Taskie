@@ -91,7 +91,7 @@ export default function Home() {
       }
 
       localStorage.setItem('taskie_tasks', JSON.stringify(data.tasks));
-      router.push('/timeline');
+      router.push('/draft');
     } catch (error: unknown) {
       console.error(error);
       const msg = error instanceof Error ? error.message : 'Erreur';
