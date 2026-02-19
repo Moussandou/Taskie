@@ -9,10 +9,14 @@ export async function parseBrainDump(text: string) {
     apiKey: process.env.GEMINI_API_KEY,
   });
 
+  const today = new Date().toISOString().split('T')[0];
+
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: `Transformez ce texte libre décrivant une journée en une liste de tâches structurées.
-Si certaines choses sont ambiguës (ex: durée non précisée pour une tâche complexe), renvoyez des questions.
+    contents: `Nous sommes aujourd'hui le ${today}.
+Transformez ce texte libre décrivant votre emploi du temps en une liste de tâches structurées.
+Si une date spécifique est mentionnée (ex: "vendredi", "le 12") ou si une tâche s'y prête mieux, déduisez sa date précise (YYYY-MM-DD) en fonction d'aujourd'hui. Laissez null si la tâche est valide n'importe quand.
+Si certaines choses sont ambiguës (ex: durée non précisée), renvoyez des questions.
 Texte : "${text}"`,
     config: {
       temperature: 0.1,

@@ -169,10 +169,10 @@ export default function DraftPage() {
                         />
                       </div>
 
-                      <div className="md:col-span-2 relative group">
-                        <label className="text-[10px] font-bold text-slate-400 tracking-wider flex items-center justify-between">
-                          <span className="uppercase">Durée</span>
-                          <span className="text-primary">
+                      <div className="md:col-span-2 relative group flex flex-col justify-end">
+                        <label className="text-[10px] font-bold text-slate-400 tracking-wider flex items-center justify-between mb-1">
+                          <span className="uppercase">Durée (min)</span>
+                          <span className="text-primary text-[14px] font-extrabold bg-primary/10 px-2.5 py-1 rounded-md">
                             {formatDuration(task.duree_estimee)}
                           </span>
                         </label>
