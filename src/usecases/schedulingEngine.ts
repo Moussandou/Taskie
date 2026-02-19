@@ -254,19 +254,21 @@ export class SchedulingEngine {
       }
 
       if (!placed) {
-        // Fallback final : Forcer dans le plus grand créneau (même si l'heure déborde)
+        // Fallback final : Forcer dans le plus grand créneau dispo de TOUTE la semaine
         let maxDuration = -1;
-        let targetBestDay = targetDays[0] || availableDays[0];
+        let targetBestDay = availableDays[0];
         let targetBestBlock: TimeBlock | null = null;
 
-        const daysToSearch = targetDays.length > 0 ? targetDays : availableDays;
-
-        for (const day of daysToSearch) {
+        for (const day of availableDays) {
           const blocks = freeBlocksByDay[day] || [];
           for (let i = 0; i < blocks.length; i++) {
             const block = blocks[i];
-            if (block.durationMinutes > maxDuration) {
-              maxDuration = block.durationMinutes;
+            // Prioriser légèrement le jour cible original s'il y a égalité
+            const isOriginalDay = targetDays.includes(day);
+            const weight = isOriginalDay ? 1 : 0;
+
+            if (block.durationMinutes + weight > maxDuration) {
+              maxDuration = block.durationMinutes + weight;
               targetBestBlock = block;
               targetBestDay = day;
             }
