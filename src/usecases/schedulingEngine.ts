@@ -254,8 +254,50 @@ export class SchedulingEngine {
       }
 
       if (!placed) {
+        // Fallback final : Forcer dans le plus grand créneau (même si l'heure déborde)
+        let maxDuration = -1;
+        let targetBestDay = targetDays[0] || availableDays[0];
+        let targetBestBlock: TimeBlock | null = null;
+
+        const daysToSearch = targetDays.length > 0 ? targetDays : availableDays;
+
+        for (const day of daysToSearch) {
+          const blocks = freeBlocksByDay[day] || [];
+          for (let i = 0; i < blocks.length; i++) {
+            const block = blocks[i];
+            if (block.durationMinutes > maxDuration) {
+              maxDuration = block.durationMinutes;
+              targetBestBlock = block;
+              targetBestDay = day;
+            }
+          }
+        }
+
+        if (targetBestBlock) {
+          const taskStart = new Date(targetBestBlock.start);
+          const taskEnd = new Date(
+            taskStart.getTime() + task.duree_estimee * 60000
+          );
+
+          scheduledTasks.push({
+            ...task,
+            scheduledStart: taskStart.toISOString(),
+            scheduledEnd: taskEnd.toISOString(),
+            autoScheduled: !task.date || task.date !== targetBestDay,
+          });
+
+          // On annule ce bloc car on l'a sur-utilisé
+          targetBestBlock.durationMinutes = 0;
+          placed = true;
+          console.warn(
+            `Tâche forcée (durée trop longue) : ${task.titre} le ${targetBestDay}`
+          );
+        }
+      }
+
+      if (!placed) {
         console.warn(
-          `Impossible de placer la tâche : ${task.titre}. Elle dépasse probablement la taille max d'un bloc libre !`
+          `Impossible absolue de placer la tâche : ${task.titre}. Calendrier complètement vierge de blocs!`
         );
       }
     }
