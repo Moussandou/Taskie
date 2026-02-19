@@ -3,27 +3,22 @@
 @theme {
   --font-sans: var(--font-inter);
 
-  --color-background: #050505;
-  --color-foreground: #fafafa;
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
 
-  --color-primary: #6366f1; /* Indigo 500 */
-  --color-primary-hover: #4f46e5;
+  --color-primary: #5a4fcf;
+  --color-primary-hover: #4a3ebf;
 
   /* Glassmorphism utilities */
-  --color-glass: rgba(255, 255, 255, 0.03);
-  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass: rgba(255, 255, 255, 0.8);
+  --color-glass-border: rgba(0, 0, 0, 0.08);
+
+  --bg-pattern-dot: radial-gradient(circle, #e2e8f0 1.5px, transparent 1.5px);
 }
 
 :root {
   --background: #ffffff;
-  --foreground: #050505;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #050505;
-    --foreground: #fafafa;
-  }
+  --foreground: #0f172a;
 }
 
 body {
@@ -34,10 +29,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Base Glass pane class */
+.bg-dot-pattern {
+  background-image: var(--bg-pattern-dot);
+  background-size: 32px 32px;
+}
+
 @utility glass-pane {
   background: var(--color-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--color-glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
 }
