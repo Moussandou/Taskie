@@ -288,8 +288,9 @@ export class SchedulingEngine {
             autoScheduled: !task.date || task.date !== targetBestDay,
           });
 
-          // On annule ce bloc car on l'a sur-utilisé
-          targetBestBlock.durationMinutes = 0;
+          // Avancer le bloc pour la tâche suivante même si on a "débordé"
+          targetBestBlock.start = taskEnd;
+          targetBestBlock.durationMinutes = 0; // Marquer comme "plein" mais le start a avancé
           placed = true;
           console.warn(
             `Tâche forcée (durée trop longue) : ${task.titre} le ${targetBestDay}`

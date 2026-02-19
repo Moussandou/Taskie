@@ -104,13 +104,14 @@ function DraggableTaskCard({
       {...attributes}
     >
       <div
-        className={`absolute top-0 left-0 right-0 h-full border p-2 flex flex-col shadow-sm transition-all rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-95 
+        className={`absolute top-0 left-0 right-0 h-full border p-2 flex flex-col gap-2 shadow-sm transition-all rounded-xl overflow-hidden backdrop-blur-sm bg-opacity-95 
         ${task.autoScheduled ? 'ring-2 ring-primary ring-offset-1 ring-offset-white' : ''} 
         ${style.className} 
         ${isDone ? 'opacity-40 grayscale cursor-default' : ''}
-        ${isShort ? 'hover:h-auto hover:min-h-fit hover:z-50 hover:shadow-xl' : ''}`}
+        hover:h-auto hover:min-h-fit hover:z-50 hover:shadow-xl`}
       >
-        <div className="flex justify-between items-start mb-1 pointer-events-none gap-2">
+        {/* Header section with time and actions */}
+        <div className="shrink-0 flex justify-between items-start pointer-events-none gap-2">
           <div
             className={`text-[10px] whitespace-nowrap font-bold uppercase tracking-widest opacity-60 ${isDone ? 'line-through' : ''}`}
           >
@@ -118,9 +119,8 @@ function DraggableTaskCard({
             {format(parseISO(task.scheduledEnd), 'HH:mm')}
           </div>
 
-          {/* Actions (Snooze & Done) */}
           <div
-            className={`flex items-center gap-1 opacity-0 ${isShort ? 'group-hover:opacity-100' : 'group-hover:opacity-100'} transition-opacity pointer-events-auto shrink-0 bg-white/50 backdrop-blur-md rounded-md p-0.5`}
+            className={`flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-auto shrink-0 bg-white/50 backdrop-blur-md rounded-md p-0.5`}
           >
             <button
               onPointerDown={(e) => e.stopPropagation()}
@@ -147,51 +147,42 @@ function DraggableTaskCard({
           </div>
         </div>
 
+        {/* Title section */}
         <h3
-          className={`font-bold text-xs sm:text-sm leading-tight mt-0.5 pointer-events-none line-clamp-2 ${isShort ? 'group-hover:line-clamp-none' : ''} ${isDone ? 'line-through opacity-70' : ''}`}
+          className={`shrink-0 font-bold text-xs sm:text-sm leading-tight pointer-events-none line-clamp-2 group-hover:line-clamp-none ${isDone ? 'line-through opacity-70' : ''}`}
         >
           {task.titre}
         </h3>
 
-        {!isShort && task.duree_estimee >= 30 && (
-          <div className="mt-auto flex items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-2 pointer-events-none group-hover:flex">
-            {task.contexte !== 'any' && (
-              <span className="px-1.5 py-0.5 bg-black/5 rounded">
-                📍 {task.contexte}
-              </span>
-            )}
+        {/* Tags / Details section */}
+        <div
+          className={`shrink-0 mt-auto flex items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-1 pointer-events-none 
+          ${isShort ? 'hidden group-hover:flex' : 'flex'}`}
+        >
+          {task.contexte && task.contexte !== 'any' && (
             <span className="px-1.5 py-0.5 bg-black/5 rounded">
-              ⚡ {task.energie}
+              📍 {task.contexte}
             </span>
-          </div>
-        )}
+          )}
+          <span className="px-1.5 py-0.5 bg-black/5 rounded">
+            ⚡ {task.energie}
+          </span>
+        </div>
 
-        {isShort && (
-          <div className="hidden group-hover:flex mt-auto items-center gap-2 text-[10px] font-semibold opacity-70 truncate pt-2 pointer-events-none">
-            {task.contexte !== 'any' && (
-              <span className="px-1.5 py-0.5 bg-black/5 rounded">
-                📍 {task.contexte}
-              </span>
-            )}
-            <span className="px-1.5 py-0.5 bg-black/5 rounded">
-              ⚡ {task.energie}
-            </span>
-          </div>
-        )}
-
-        {/* HUD pour auto-suggestion */}
+        {/* HUD for auto-suggestion */}
         {task.autoScheduled && !isDone && (
           <div
-            className={`${isShort ? 'hidden group-hover:flex' : 'flex'} mt-2 text-[10px] font-bold text-primary items-center gap-2 bg-primary/10 p-1.5 rounded-md pointer-events-auto transition-opacity`}
+            className={`shrink-0 mt-2 text-[10px] font-bold text-primary items-center gap-2 bg-primary/10 p-1.5 rounded-md pointer-events-auto transition-opacity 
+              ${isShort ? 'hidden group-hover:flex' : 'flex'}`}
           >
-            <span>✨ Suggestion</span>
+            <span className="whitespace-nowrap">✨ Suggestion</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onAcceptAuto(task.id!);
               }}
               onPointerDown={(e) => e.stopPropagation()}
-              className="ml-auto bg-primary text-white px-2 py-0.5 rounded shadow-sm hover:bg-primary/80 transition-colors"
+              className="ml-auto bg-primary text-white px-2 py-0.5 rounded shadow-sm hover:bg-primary/80 transition-colors whitespace-nowrap"
             >
               OK
             </button>
